@@ -1,0 +1,26 @@
+{
+  "name": "authomatic-redis",
+  "version": "0.0.0",
+  "description": "A redis store for Authomatic",
+  "main": "index.js",
+  "scripts": {
+    "redis": "npm run redis:remove && npm run redis:start",
+    "redis:start": "docker run --name redis-test -p 6379:6379 -d redis",
+    "redis:remove": "docker rm -f redis-test &> /dev/null || true",
+    "test": "npm run test:lint && npm run test:coverage",
+    "test:coverage": "jest tests --coverage",
+    "test:lint": "eslint tests index.js"
+  },
+  "author": "Abdulrahman Amri",
+  "license": "MIT",
+  "dependencies": {
+    "redis": "^2.8.0",
+    "redisscan": "^2.0.0",
+    "tcomb": "^3.2.24"
+  },
+  "devDependencies": {
+    "eslint": "^4.13.1",
+    "eslint-config-warp": "^2.1.0",
+    "jest": "^21.2.1"
+  }
+}
