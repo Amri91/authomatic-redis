@@ -61,7 +61,7 @@ describe('RedisStore', () => {
       await store.registerTokens(userId, 'r2', 'a2', ttl);
       await store.registerTokens(userId, 'r3', 'a3', ttl);
       expect(await store.removeAll(userId)).toBeTruthy();
-      expect((await store._scanKeys(userId)).length).toBe(0);
+      expect(await store.removeAll(userId)).toBe(0);
     });
   });
 });

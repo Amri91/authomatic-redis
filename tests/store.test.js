@@ -28,17 +28,7 @@ describe('RedisStore', () => {
         _del(...args);
       }
     };
-    store = new Store({client: fakeClient});
-  });
-
-  describe('#constructor', () => {
-    it('should throw an error if the client was not provided', () => {
-      expect(() => new Store({})).toThrow();
-    });
-    it('should respond to changing base string', () => {
-      const newStore = new Store({client: fakeClient, baseString: 'someString'});
-      expect(newStore._getKeyPrefix(userId).includes('someString')).toBeTruthy();
-    });
+    store = Store({client: fakeClient});
   });
 
   describe('#registerTokens', () => {
@@ -69,20 +59,6 @@ describe('RedisStore', () => {
     it('Should call del with correct arguments', async () => {
       await store.remove(userId, refreshToken);
       expect(_del.mock.calls[0][0]).toBe(`authomatic_${userId}_${refreshToken}`);
-    });
-  });
-
-  describe('#removeAll', () => {
-    it('Should remove all refresh tokens for a single user', async () => {
-      store._scanKeys = jest.fn(() => ['1', '2', '3']);
-      await store.removeAll(userId);
-      expect(_del.mock.calls.length).toBe(1);
-      expect(_del.mock.calls[0][0]).toEqual(['1', '2', '3']);
-    });
-    it('Should expect an empty array', async () => {
-      store._scanKeys = jest.fn(() => []);
-      expect(await store.removeAll(userId)).toBeFalsy();
-      expect(_del.mock.calls.length).toBe(0);
     });
   });
 });
