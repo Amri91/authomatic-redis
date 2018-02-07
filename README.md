@@ -3,7 +3,7 @@
 [![codecov](https://codecov.io/gh/wearereasonablepeople/authomatic-redis/branch/master/graph/badge.svg?token=Bh9Dku3el1)](https://codecov.io/gh/wearereasonablepeople/authomatic-redis)
 [![Maintainability](https://api.codeclimate.com/v1/badges/de17d1c089d4120b8a1f/maintainability)](https://codeclimate.com/github/wearereasonablepeople/authomatic-redis/maintainability)
 
-Redis store for Authomatic
+Redis store for [Authomatic](https://github.com/wearereasonablepeople/authomatic)
 
 ## install
 ```

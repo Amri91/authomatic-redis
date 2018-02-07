@@ -1,6 +1,6 @@
 {
   "name": "authomatic-redis",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "A redis store for Authomatic",
   "main": "index.js",
   "scripts": {
@@ -19,6 +19,7 @@
     "tcomb": "^3.2.24"
   },
   "devDependencies": {
+    "codecov": "^3.0.0",
     "eslint": "^4.13.1",
     "eslint-config-warp": "^2.1.0",
     "jest": "^21.2.1"
