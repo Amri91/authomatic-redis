@@ -23,5 +23,12 @@
     "eslint": "^4.13.1",
     "eslint-config-warp": "^2.1.0",
     "jest": "^21.2.1"
-  }
+  },
+  "keywords": [
+    "authomatic",
+    "redis",
+    "store",
+    "jwt",
+    "authentication"
+  ]
 }

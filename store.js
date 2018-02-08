@@ -6,19 +6,26 @@ const {promisify} = require('util');
 const redisScan = require('redisscan');
 const t = require('tcomb');
 
-const UserId = t.String;
 const RefreshToken = t.String;
 const Token = t.String;
 const TTL = t.Number;
 
 module.exports = function Store({client, baseString = 'authomatic'}) {
 
+  const UserId = userId => {
+    t.String(userId);
+    if(userId.includes(baseString)) {
+      throw new Error(`User id: ${userId} should not contain the base string _${baseString}_.
+      Change the base string or the userId`);
+    }
+    return userId;
+  };
+
   const setAsync = promisify(client.set).bind(client);
   const getAsync = promisify(client.get).bind(client);
-  const existsAsync = promisify(client.exists).bind(client);
   const delAsync = promisify(client.del).bind(client);
 
-  const getKeyPrefix = userId => `${baseString}_${userId}_`;
+  const getKeyPrefix = userId => `${userId}_${baseString}_`;
 
   const getKey = (userId, refreshToken) => `${getKeyPrefix(userId)}${refreshToken}`;
 
@@ -28,7 +35,7 @@ module.exports = function Store({client, baseString = 'authomatic'}) {
    * @param {String} refreshToken
    * @param {String} accessToken
    * @param {Number} ttl time to live in ms
-   * @returns {Promise}
+   * @returns {Promise<Boolean>} returns true when created.
    */
   const registerTokens = (userId, refreshToken, accessToken, ttl) => setAsync(
     getKey(
@@ -37,22 +44,13 @@ module.exports = function Store({client, baseString = 'authomatic'}) {
     ),
     Token(accessToken),
     'EX', TTL(ttl)
-  );
-
-  /**
-   * Checks if the refresh token is valid for this user
-   * @param userId
-   * @param refreshToken
-   * @returns {Promise}
-   */
-  const verify = (userId, refreshToken) =>
-    existsAsync(getKey(UserId(userId), RefreshToken(refreshToken)));
+  ).then(Boolean);
 
   /**
    * Returns the user's token using the userId and the refresh token
    * @param userId
    * @param refreshToken
-   * @returns {Promise}
+   * @returns {Promise<String>} the access token if found or null
    */
   const getAccessToken = (userId, refreshToken) =>
     getAsync(getKey(UserId(userId), RefreshToken(refreshToken)));
@@ -81,30 +79,29 @@ module.exports = function Store({client, baseString = 'authomatic'}) {
   };
 
   /**
-   * Removes all tokens for a particular user
-   * @param userId
-   * @returns {Promise<[any, ...]>}
-   */
-  const removeAll = async userId => {
-    const keys = await scanKeys(UserId(userId));
-    return keys.length && delAsync(keys);
-  };
-
-  /**
    * Remove a single refresh token from the user
    * @param userId
    * @param refreshToken
-   * @returns {Promise}
+   * @returns {Promise<Boolean>} true if found and deleted, otherwise false.
    */
   const remove = (userId, refreshToken) =>
-    delAsync(getKey(UserId(userId), RefreshToken(refreshToken)));
+    delAsync(getKey(UserId(userId), RefreshToken(refreshToken))).then(Boolean);
+
+  /**
+   * Removes all tokens for a particular user
+   * @param userId
+   * @returns {Promise<Boolean>} true if any were found and delete, false otherwise
+   */
+  const removeAll = async userId => {
+    const keys = await scanKeys(UserId(userId));
+    return Boolean(keys.length && await delAsync(keys));
+  };
 
   return {
     remove,
     removeAll,
     registerTokens,
     getAccessToken,
-    verify,
     client
   };
 };
