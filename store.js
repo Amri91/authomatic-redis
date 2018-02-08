@@ -1,14 +1,9 @@
 /* eslint-disable camelcase */
 
-/**
- * Data structures
- * refreshToken: {accessToken, userId}
- * userId: [refreshToken]
- */
-
 'use strict';
 
 const {promisify} = require('util');
+const redisScan = require('redisscan');
 const t = require('tcomb');
 
 const UserId = t.String;
@@ -16,18 +11,16 @@ const RefreshToken = t.String;
 const Token = t.String;
 const TTL = t.Number;
 
-const cbHandler = (resolve, reject) => (err, replies) => err ? reject(err) : resolve(replies);
-
 module.exports = function Store({client, baseString = 'authomatic'}) {
 
+  const setAsync = promisify(client.set).bind(client);
   const getAsync = promisify(client.get).bind(client);
+  const existsAsync = promisify(client.exists).bind(client);
   const delAsync = promisify(client.del).bind(client);
-  const smembersAsync = promisify(client.smembers).bind(client);
-  const sremAsync = promisify(client.srem).bind(client);
 
-  const getUKey = userId => `${baseString}_${userId}`;
+  const getKeyPrefix = userId => `${baseString}_${userId}_`;
 
-  const getRTKey = refreshToken => `${baseString}_${refreshToken}`;
+  const getKey = (userId, refreshToken) => `${getKeyPrefix(userId)}${refreshToken}`;
 
   /**
    * Register token and refresh token to the user
@@ -35,82 +28,83 @@ module.exports = function Store({client, baseString = 'authomatic'}) {
    * @param {String} refreshToken
    * @param {String} accessToken
    * @param {Number} ttl time to live in ms
-   * @returns {Promise<Boolean>} returns true on success
+   * @returns {Promise}
    */
-  const registerTokens = (userId, refreshToken, accessToken, ttl) => {
-    RefreshToken(refreshToken);
-    const stringifiedValue = JSON.stringify({uid: UserId(userId), at: Token(accessToken)});
-    return new Promise((resolve, reject) => client
-    .multi()
-    // Sets refreshToken -> accessToken & userId
-    .set(getRTKey(refreshToken), stringifiedValue, 'EX', TTL(ttl))
-    // Adds refreshToken to userId set
-    .sadd(getUKey(userId), refreshToken)
-    .expire(getUKey(userId), TTL(ttl))
-    .exec(cbHandler(resolve, reject)))
-    .then(Boolean);
-  };
+  const registerTokens = (userId, refreshToken, accessToken, ttl) => setAsync(
+    getKey(
+      UserId(userId),
+      RefreshToken(refreshToken)
+    ),
+    Token(accessToken),
+    'EX', TTL(ttl)
+  );
 
   /**
-   * Returns the access token associated with the refresh token
+   * Checks if the refresh token is valid for this user
+   * @param userId
    * @param refreshToken
-   * @returns {Promise<String|undefined>} the token or undefined if not found.
+   * @returns {Promise}
    */
-  const getAccessToken = async refreshToken => {
-    const value = await getAsync(getRTKey(RefreshToken(refreshToken)));
-    if(value) {
-      return JSON.parse(value).at;
-    }
-    return undefined;
-  };
+  const verify = (userId, refreshToken) =>
+    existsAsync(getKey(UserId(userId), RefreshToken(refreshToken)));
 
   /**
-   * Remove a single refresh token from the user
+   * Returns the user's token using the userId and the refresh token
+   * @param userId
    * @param refreshToken
-   * @returns {Promise<Boolean>} true if found and remove, false otherwise
+   * @returns {Promise}
    */
-  const remove = async refreshToken => {
-    RefreshToken(refreshToken);
-    const RTKey = getRTKey(refreshToken);
-    const value = await getAsync(RTKey);
-    const removeTPResult = await delAsync(RTKey);
-    if(!value) {
-      return false;
-    }
-    const userId = JSON.parse(value).uid;
-    await sremAsync(userId, refreshToken);
-    // Success based on the del command
-    return Boolean(removeTPResult);
+  const getAccessToken = (userId, refreshToken) =>
+    getAsync(getKey(UserId(userId), RefreshToken(refreshToken)));
+
+  /**
+   * Scans for redis keys
+   * @param userId
+   */
+  const scanKeys = userId => {
+    const set = new Set();
+    return new Promise((resolve, reject) => {
+      redisScan({
+        redis: client,
+        pattern: `${getKeyPrefix(userId)}*`,
+        keys_only: false,
+        each_callback: function (type, key, subkey, length, value, cb) {
+          set.add(key);
+          cb();
+        },
+        done_callback: function (err) {
+          if(err) {return reject(err);}
+          return resolve([...set]);
+        }
+      });
+    });
   };
 
   /**
    * Removes all tokens for a particular user
    * @param userId
-   * @returns {Promise<Boolean>} true if any has been found and removed, false otherwise
+   * @returns {Promise<[any, ...]>}
    */
   const removeAll = async userId => {
-    UserId(userId);
-    const refreshTokens = await smembersAsync(getUKey(userId));
-    // Refresh tokens might change during this operation,
-    // but that is OK as far as this store is concerned.
-    if (!refreshTokens.length) {
-      return false;
-    }
-
-    return new Promise((resolve, reject) => client
-    .multi()
-    .del(refreshTokens.map(getRTKey))
-    .srem(getUKey(userId), refreshTokens)
-    .exec(cbHandler(resolve, reject)))
-    // Success based on the first command (del)
-    .then(replies => Boolean(replies[0]));
+    const keys = await scanKeys(UserId(userId));
+    return keys.length && delAsync(keys);
   };
+
+  /**
+   * Remove a single refresh token from the user
+   * @param userId
+   * @param refreshToken
+   * @returns {Promise}
+   */
+  const remove = (userId, refreshToken) =>
+    delAsync(getKey(UserId(userId), RefreshToken(refreshToken)));
 
   return {
     remove,
     removeAll,
     registerTokens,
     getAccessToken,
+    verify,
     client
   };
 };

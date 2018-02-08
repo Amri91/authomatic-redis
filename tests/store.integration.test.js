@@ -20,7 +20,7 @@ describe('RedisStore', () => {
 
   describe('#registerTokens', () => {
     it('Should store access and refresh tokens', async () => {
-      expect(await store.registerTokens(userId, refreshToken, accessToken, ttl)).toBe(true);
+      expect(await store.registerTokens(userId, refreshToken, accessToken, ttl)).toBeTruthy();
     });
   });
 
@@ -29,21 +29,28 @@ describe('RedisStore', () => {
       await store.registerTokens(userId, 'r1', '1', ttl);
       await store.registerTokens(userId, refreshToken, accessToken, ttl);
       await store.registerTokens(userId, 'r3', '3', ttl);
-      expect(await store.getAccessToken(refreshToken)).toBe(accessToken);
+      expect(await store.getAccessToken(userId, refreshToken)).toBe(accessToken);
     });
-    it('should return nothing if token was not found', async () => {
-      expect(await store.getAccessToken(refreshToken)).toBe(undefined);
+  });
+
+  describe('#verify', () => {
+    it('Should return true if refresh token and user id pair exist', async () => {
+      await store.registerTokens(userId, refreshToken, accessToken, ttl);
+      expect(await store.verify(userId, refreshToken)).toBeTruthy();
+    });
+    it('Should return false if refresh token and user id pair do not exist', async () => {
+      expect(await store.verify(userId, refreshToken)).toBeFalsy();
     });
   });
 
   describe('#remove', () => {
     it('Should return true if record is removed', async () => {
       await store.registerTokens(userId, refreshToken, accessToken, ttl);
-      expect(await store.remove(refreshToken)).toBe(true);
-      expect(await store.remove(refreshToken)).toBe(false);
+      expect(await store.remove(userId, refreshToken)).toBeTruthy();
+      expect(await store.verify(userId, refreshToken)).toBeFalsy();
     });
     it('Should return false if record does not exist', async () => {
-      expect(await store.remove(refreshToken)).toBe(false);
+      expect(await store.remove(userId, refreshToken)).toBeFalsy();
     });
   });
 
@@ -53,8 +60,8 @@ describe('RedisStore', () => {
       await store.registerTokens(userId, 'r1', 'a1', ttl);
       await store.registerTokens(userId, 'r2', 'a2', ttl);
       await store.registerTokens(userId, 'r3', 'a3', ttl);
-      expect(await store.removeAll(userId)).toBe(true);
-      expect(await store.removeAll(userId)).toBe(false);
+      expect(await store.removeAll(userId)).toBeTruthy();
+      expect(await store.removeAll(userId)).toBe(0);
     });
   });
 });
