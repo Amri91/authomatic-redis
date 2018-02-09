@@ -29,21 +29,21 @@ describe('RedisStore', () => {
       await store.registerTokens(userId, 'r1', '1', ttl);
       await store.registerTokens(userId, refreshToken, accessToken, ttl);
       await store.registerTokens(userId, 'r3', '3', ttl);
-      expect(await store.getAccessToken(refreshToken)).toBe(accessToken);
+      expect(await store.getAccessToken(userId, refreshToken)).toBe(accessToken);
     });
-    it('should return nothing if token was not found', async () => {
-      expect(await store.getAccessToken(refreshToken)).toBe(undefined);
+    it('Should return null if no tokens exist', async () => {
+      expect(await store.getAccessToken(userId, refreshToken)).toBe(null);
     });
   });
 
   describe('#remove', () => {
     it('Should return true if record is removed', async () => {
       await store.registerTokens(userId, refreshToken, accessToken, ttl);
-      expect(await store.remove(refreshToken)).toBe(true);
-      expect(await store.remove(refreshToken)).toBe(false);
+      expect(await store.remove(userId, refreshToken)).toBe(true);
+      expect(await store.remove(userId, refreshToken)).toBe(false);
     });
     it('Should return false if record does not exist', async () => {
-      expect(await store.remove(refreshToken)).toBe(false);
+      expect(await store.remove(userId, refreshToken)).toBe(false);
     });
   });
 

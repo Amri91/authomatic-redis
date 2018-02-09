@@ -18,6 +18,7 @@ const Store = require('authomatic-redis');
 const store = Store();
 const Authomatic = require('authomatic');
 const authomatic = Authomatic({store}); 
+// authomatic is ready
 
 // You many use the redis client if needed
 // store.client.quit()
