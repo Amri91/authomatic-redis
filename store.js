@@ -6,8 +6,8 @@ const {promisify} = require('util');
 const redisScan = require('redisscan');
 const t = require('tcomb');
 
-const RefreshToken = t.String;
-const Token = t.String;
+const RefreshTokenJTI = t.String;
+const AccessTokenJTI = t.String;
 const TTL = t.Number;
 
 module.exports = function Store({client, baseString = 'authomatic'}) {
@@ -22,7 +22,6 @@ module.exports = function Store({client, baseString = 'authomatic'}) {
   };
 
   const setAsync = promisify(client.set).bind(client);
-  const getAsync = promisify(client.get).bind(client);
   const delAsync = promisify(client.del).bind(client);
 
   const getKeyPrefix = userId => `${userId}_${baseString}_`;
@@ -32,28 +31,20 @@ module.exports = function Store({client, baseString = 'authomatic'}) {
   /**
    * Register token and refresh token to the user
    * @param {String} userId
-   * @param {String} refreshToken
-   * @param {String} accessToken
+   * @param {String} refreshTokenJTI
+   * @param {String} accessTokenJTI
    * @param {Number} ttl time to live in ms
    * @returns {Promise<Boolean>} returns true when created.
    */
-  const registerTokens = (userId, refreshToken, accessToken, ttl) => setAsync(
+  const add = (userId, refreshTokenJTI, accessTokenJTI, ttl) => setAsync(
     getKey(
       UserId(userId),
-      RefreshToken(refreshToken)
+      RefreshTokenJTI(refreshTokenJTI)
     ),
-    Token(accessToken),
+    // Not used yet, might be used later.
+    AccessTokenJTI(accessTokenJTI),
     'EX', TTL(ttl)
   ).then(Boolean);
-
-  /**
-   * Returns the user's token using the userId and the refresh token
-   * @param userId
-   * @param refreshToken
-   * @returns {Promise<String>} the access token if found or null
-   */
-  const getAccessToken = (userId, refreshToken) =>
-    getAsync(getKey(UserId(userId), RefreshToken(refreshToken)));
 
   /**
    * Scans for redis keys
@@ -65,7 +56,7 @@ module.exports = function Store({client, baseString = 'authomatic'}) {
       redisScan({
         redis: client,
         pattern: `${getKeyPrefix(userId)}*`,
-        keys_only: false,
+        keys_only: true,
         each_callback: function (type, key, subkey, length, value, cb) {
           set.add(key);
           cb();
@@ -81,11 +72,11 @@ module.exports = function Store({client, baseString = 'authomatic'}) {
   /**
    * Remove a single refresh token from the user
    * @param userId
-   * @param refreshToken
+   * @param refreshTokenJTI
    * @returns {Promise<Boolean>} true if found and deleted, otherwise false.
    */
-  const remove = (userId, refreshToken) =>
-    delAsync(getKey(UserId(userId), RefreshToken(refreshToken))).then(Boolean);
+  const remove = (userId, refreshTokenJTI) =>
+    delAsync(getKey(UserId(userId), RefreshTokenJTI(refreshTokenJTI))).then(Boolean);
 
   /**
    * Removes all tokens for a particular user
@@ -100,8 +91,7 @@ module.exports = function Store({client, baseString = 'authomatic'}) {
   return {
     remove,
     removeAll,
-    registerTokens,
-    getAccessToken,
+    add,
     client
   };
 };
