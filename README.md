@@ -2,6 +2,7 @@
 [![Build Status](https://travis-ci.org/wearereasonablepeople/authomatic-redis.svg?branch=master)](https://travis-ci.org/wearereasonablepeople/authomatic-redis)
 [![Coverage Status](https://coveralls.io/repos/github/wearereasonablepeople/authomatic-redis/badge.svg?branch=master)](https://coveralls.io/github/wearereasonablepeople/authomatic-redis?branch=master)
 [![Maintainability](https://api.codeclimate.com/v1/badges/de17d1c089d4120b8a1f/maintainability)](https://codeclimate.com/github/wearereasonablepeople/authomatic-redis/maintainability)
+[![Greenkeeper badge](https://badges.greenkeeper.io/wearereasonablepeople/authomatic-redis.svg)](https://greenkeeper.io/)
 
 Redis store for [Authomatic](https://github.com/wearereasonablepeople/authomatic)
 
