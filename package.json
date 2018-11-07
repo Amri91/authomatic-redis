@@ -16,7 +16,7 @@
   "dependencies": {
     "redis": "^2.8.0",
     "redisscan": "^2.0.0",
-    "tcomb": "^3.2.24"
+    "tcomb": "^3.2.28"
   },
   "devDependencies": {
     "coveralls": "^3.0.1",
