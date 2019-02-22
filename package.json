@@ -19,7 +19,7 @@
     "tcomb": "^3.2.24"
   },
   "devDependencies": {
-    "coveralls": "^3.0.1",
+    "coveralls": "^3.0.3",
     "eslint-config-warp": "^3.0.0",
     "eslint": "^5.0.0",
     "jest": "^23.1.0"
