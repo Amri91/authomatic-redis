@@ -1,6 +1,6 @@
 {
   "name": "authomatic-redis",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A redis store for Authomatic",
   "main": "index.js",
   "scripts": {
@@ -11,18 +11,22 @@
     "test:coverage": "jest tests --coverage",
     "test:lint": "eslint tests index.js"
   },
+  "engines": {
+    "node": ">=10.x"
+  },
   "author": "Abdulrahman Amri",
   "license": "MIT",
   "dependencies": {
-    "redis": "^2.8.0",
+    "redis": "^3.1.1",
     "redisscan": "^2.0.0",
-    "tcomb": "^3.2.24"
+    "tcomb": "^3.2.29"
   },
   "devDependencies": {
-    "coveralls": "^3.0.1",
-    "eslint-config-warp": "^3.0.0",
-    "eslint": "^6.0.0",
-    "jest": "^23.1.0"
+    "coveralls": "^3.1.1",
+    "eslint": "^7.12.1",
+    "eslint-config-warp": "^6.1.0",
+    "eslint-plugin-node": "^11.1.0",
+    "jest": "^27.5.0"
   },
   "keywords": [
     "authomatic",
