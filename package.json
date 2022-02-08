@@ -11,6 +11,9 @@
     "test:coverage": "jest tests --coverage",
     "test:lint": "eslint tests index.js"
   },
+  "engines": {
+    "node": ">=10.x"
+  },
   "author": "Abdulrahman Amri",
   "license": "MIT",
   "dependencies": {
